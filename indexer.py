@@ -3,6 +3,7 @@ import io, fileinput, string
 # from numpy import *
 import pickle
 import os.path
+import pprint
 stopwordsFile = "/home/nk7/spl_pySearch/stopwords.dat"
 # def stopWord(stopwordsFile)
 f=open(stopwordsFile, 'r')
@@ -26,11 +27,12 @@ def getTerms(line):
 
 # mainIndex = pickle.load(open("/home/nk7/spl_pySearch/dict.p", "rb"))
 mainIndex = {}
-for filename in os.listdir("/home/nk7/spl_pySearch/corpus"):
+docIndex = {}
+for filename in os.listdir("/home/nk7/spl_pySearch/corpus/"):
     if filename.endswith(".txt"):
         fileIndex = {}
         count = 0
-        with open(filename) as f:
+        with open("corpus/" + filename) as f:
             for num, line in enumerate(f, 1):
                 line = getTerms(line)
                 for word in line:
@@ -45,9 +47,13 @@ for filename in os.listdir("/home/nk7/spl_pySearch/corpus"):
                     mainIndex[word].append(fileIndex[word])
                 else:
                     mainIndex[word] = [fileIndex[word]]
+        docIndex[filename] = count
         # print(mainIndex)
-
+# pprint.pprint(mainIndex)
+# pprint.pprint(docIndex)
 pickle.dump(mainIndex, open("/home/nk7/spl_pySearch/dict.p", "wb"))
+pickle.dump(docIndex, open("/home/nk7/spl_pySearch/docdict.p", "wb"))
+
         # print (f)
         # count=0
         # split = f.split()

@@ -5,9 +5,12 @@ import re
 import copy
 import pickle
 from functools import reduce
+from okapi_BM25 import score_BM25
 
 stopwordsFile = "/home/nk7/spl_pySearch/stopwords.dat"
 mainIndex = pickle.load(open("/home/nk7/spl_pySearch/dict.p", "rb"))
+docIndex = pickle.load(open("/home/nk7/spl_pySearch/docdict.p", "rb"))
+avdl = sum([docIndex[x] for x in docIndex])/len(docIndex)
 # print (mainIndex)
 q = input("Enter your search query :")
 
@@ -16,7 +19,16 @@ def intersectLists(lists):
         return []
     #start intersecting from the smaller list
     lists.sort(key=len)
-    return list(reduce(lambda x,y: set(x)&set(y),lists))
+    # return list(reduce(lambda x,y: set(x)&set(y),lists))
+
+    ans = lists[0]
+    for l in lists:
+        ans = [value for value in ans if value in l]
+        # k = []
+        # for r in l:
+        #     k.append(r[0])
+        # ans = list(set(ans)&set(k))
+    return ans
 
 
 def stopWord(stopwordsFile):
@@ -71,8 +83,26 @@ def ftq(q):
             continue
 
     li=list(li)
-    return li
-    # rankDocuments(q, li)
+    # return li
+    rankDocuments(q, li)
+
+def rankDocuments(q, li):
+    doc_list = []
+    for doc in li:
+        doc_score = 0
+        for word in q:
+            if word in mainIndex:
+                n = len(mainIndex[word])
+                for d in mainIndex[word]:
+                    if doc == d[0]:
+                        f = len(d[1])
+            # print (score_BM25(n, f, len(docIndex), docIndex[doc], avdl))
+                doc_score += score_BM25(n, f, len(docIndex), docIndex[doc], avdl)
+        doc_list.append([doc, doc_score])
+
+    doc_list = sorted(doc_list,key=lambda x: x[1], reverse=True)
+    print(doc_list)
+
 
 def pq(q):
     originalQuery=q
@@ -85,7 +115,9 @@ def pq(q):
         return
 
     phraseDocs=pqDocs(q)
-    return phraseDocs
+    phraseDocs = sorted(phraseDocs,key=lambda x: x[1], reverse=True)
+    print (phraseDocs)
+    # return phraseDocs
     # rankDocuments(q, phraseDocs)
 
 def pqDocs(q):
@@ -110,20 +142,31 @@ def pqDocs(q):
 
     #subtract i from the ith terms location in the docs
     postings=copy.deepcopy(postings)    #this is important since we are going to modify the postings list
-
+    # print (postings)
+    # print ("\n")
     for i in range(len(postings)):
         for j in range(len(postings[i])):
-            postings[i][j][1]=[x-i for x in postings[i][j][1][0]]
-
+            # print (postings[i][j][1])
+            # print ("\n")
+            postings[i][j][1]=[[x[0]-i, x[1]] for x in postings[i][j][1]]
+    # print (postings)
     #intersect the locations
     result=[]
-    for i in range(len(postings[0])):
-        li=intersectLists( [x[i][1] for x in postings] )
+    # for i in range(len(postings)):
+    doc_rank = []
+    for j in range(len(postings[0])):
+        # print(postings[i][j][1])
+        # for x in postings:
+        #     print(x[j][1])
+        li=intersectLists( [x[j][1] for x in postings] )
+
         if li==[]:
             continue
         else:
-            result.append(postings[0][i][0])    #append the docid to the result
+            doc_rank.append([postings[0][j][0], len(li)])
+            # result.append(postings[0][i][0])    #append the docid to the result
 
-    return result
+    return doc_rank
 
-print(queryType(q))
+# print(queryType(q))
+queryType(q)
