@@ -1,7 +1,7 @@
 import re
 from nltk import PorterStemmer
 
-stopwordsFile = "/home/nk7/spl_pySearch/stopwords.dat"
+stopwordsFile = "/home/nk7/spl_pySearch/stopwords.txt"
 
 def stopWord(stopwordsFile):
     f=open(stopwordsFile, 'r')
