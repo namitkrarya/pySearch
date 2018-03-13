@@ -1,3 +1,5 @@
 Pipfile
 __pycache__/
 index_dump/
+corpus/split/
+*.pyc
