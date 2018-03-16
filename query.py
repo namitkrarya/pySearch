@@ -2,7 +2,7 @@ import re
 import copy
 import pickle, pprint
 from functools import reduce
-from parser import stopWord, getTerms
+from parser import getTerms
 from okapi_BM25 import score_BM25
 
 mainIndex = pickle.load(open("/home/nk7/spl_pySearch/index_dump/mainIndex.p", "rb"))
@@ -12,18 +12,21 @@ avdl = sum([docIndex[x][1] for x in docIndex])/len(docIndex)
 def queryInstance(q):
     final = []
     if '"' in q:
-        final = (pq(q))
+        final = pq(q)
     else:
-        final = (ftq(q))
-    for rank, hit in enumerate(final, 1):
-        print (str(rank), hit[0], "at line(s)", [x[0] for x in hit[1] if x[1] > 0])
+        final = ftq(q)
+    if final != []:
+        for rank, hit in enumerate(final, 1):
+            print (str(rank), hit[0], "at line(s)", [x[0] for x in hit[1] if x[1] > 0])
 
 def function(list1, list2):
     list = []
     for value1 in list1:
         for value2 in list2:
             if (value1[0] == value2[0]):
-                list.append([value1[0], [pos for pos in value1[1] if pos in value2[1]]])
+                pos = [pos for pos in value1[1] if pos in value2[1]]
+                if (pos != []):
+                    list.append([value1[0], pos])
     return list
 def intersectLists(lists):
     if len(lists)==0:
@@ -55,10 +58,8 @@ def getDocsFromPostings(postings):
 
 def ftq(q):
     q=getTerms(q)
-    if len(q)==0:
-        print ('')
-        return
-
+    if q == []:
+        return [];
     li=set()
     for word in q:
         if word in mainIndex:
@@ -87,6 +88,7 @@ def rankDocuments(q, li):
                             l[line[0]-1][1] += len(line[1])
                 doc_score += score_BM25(n, f, len(docIndex), docIndex[doc][1], avdl)
                 # print(score_BM25(n, f, len(docIndex), docIndex[doc][1], avdl), str(f))
+        l = [x for x in l if x[1] != 0]
         l = sorted(l, key=lambda x: x[1], reverse=True)
         doc_list.append([doc, l, doc_score])
     doc_list = sorted(doc_list,key=lambda x: x[-1], reverse=True)
@@ -96,14 +98,11 @@ def pq(q):
     originalQuery=q
     q=getTerms(q)
     if len(q)==0:
-        print ('')
-        return
+        return [];
     elif len(q)==1:
-        ftq(originalQuery)
-        return
+        return ftq(originalQuery)
 
     phraseDocs=pqDocs(q)
-    # phraseDocs = sorted(phraseDocs,key=lambda x: len(x[1]), reverse=True)
     phraseDocs = sorted(phraseDocs,key=lambda x: sum([len(line[1]) for line in x[1]]), reverse=True)
     doc_list = []
     for doc in phraseDocs:
